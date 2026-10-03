@@ -98,6 +98,11 @@ namespace pixelbros {
         }
     }
     function play(p: music.Playable) { music.play(p, music.PlaybackMode.InBackground) }
+    // Paletten je Stil (palettes.ts): beim Laden wird die Palette des Stils gesetzt
+    let stylePalettes = true
+    function applyPalette(s: number) {
+        if (stylePalettes && s >= 0 && s < pbPalettes.list.length) image.setPalette(pbPalettes.list[s])
+    }
 
     // ---------------------------------------------------------------- Bühnen
     function stageMap(i: number): tiles.TileMapData {
@@ -194,6 +199,7 @@ namespace pixelbros {
     function loadStage(i: number) {
         stage = i
         style = stageStyle(i)
+        applyPalette(style)
         for (const f of foes) f.s.destroy()
         foes = []
         sprites.destroyAllSpritesOfKind(SpriteKind.PbFx)
@@ -667,4 +673,13 @@ namespace pixelbros {
     //% blockId=pb_stage block="aktuelle Bühne"
     //% group="Werte" weight=70
     export function currentStage(): number { return stage + 1 }
+
+    /**
+     * Jeder Stil bringt seine eigene 16-Farben-Palette mit (z. B. Blautöne im Meer, Glut in der Lavahöhle).
+     * Aus: das Spiel nutzt die Palette des Projekts.
+     */
+    //% blockId=pb_palettes block="Stil-Paletten $on"
+    //% on.shadow=toggleOnOff on.defl=true
+    //% group="Einstellungen" weight=10
+    export function useStylePalettes(on: boolean) { stylePalettes = on }
 }
