@@ -1,0 +1,42 @@
+// Erzeugt assets.ts, stages.ts und sounds.ts mit dem Arcade Asset Generator. Aufruf: node tools/build-assets.js
+const fs = require('fs'), path = require('path');
+const G = require('../../generator/assetgen.js');
+const S = require('../../generator/soundgen.js');
+const C = require('./config.js');
+const cap = s => s[0].toUpperCase() + s.slice(1);
+const KEYS = ['platform', 'floor', 'powL', 'powR'];
+let ts = '// AUTOMATISCH ERZEUGT von tools/build-assets.js – nicht von Hand bearbeiten.\nnamespace brosGfx {\n';
+ts += G.imageToTS('empty8', new G.Pix(8, 8));
+const sets = [], pipes = [];
+C.styles.forEach(st => {
+    const t = G.brosTiles(st);
+    KEYS.forEach(k => ts += G.imageToTS('t' + cap(st) + cap(k), t[k]));
+    sets.push('[empty8, ' + KEYS.map(k => 't' + cap(st) + cap(k)).join(', ') + ']');
+    ts += G.imageToTS('pipe' + cap(st), G.brosPipe(st));
+    pipes.push('pipe' + cap(st));
+});
+ts += `    // Reihenfolge: leer, Plattform, Boden, POW links, POW rechts\n    export const tilesets: Image[][] = [${sets.join(', ')}]\n`;
+ts += `    export const pipes: Image[] = [${pipes.join(', ')}]\n`;
+C.heroColors.forEach((c, i) => ts += G.framesToTS('hero' + (i + 1), G.brosHero(c)));
+ts += '    export const heroes: Image[][] = [hero1, hero2, hero3, hero4]\n';
+C.enemies.forEach(e => { ts += G.framesToTS(e, G.brosEnemy(e, false)) + G.framesToTS(e + 'Angry', G.brosEnemy(e, true)); });
+ts += '    export const enemies: Image[][] = [' + C.enemies.join(', ') + ']\n';
+ts += '    export const enemiesAngry: Image[][] = [' + C.enemies.map(e => e + 'Angry').join(', ') + ']\n';
+ts += G.framesToTS('coin', G.brosCoin()) + '}\n';
+fs.writeFileSync(path.join(__dirname, '../assets.ts'), ts);
+let st = '// AUTOMATISCH ERZEUGT von tools/build-assets.js.\nnamespace brosStages {\n    export const count = ' + C.stages.length + '\n';
+st += '    export const names: string[] = [' + C.stages.map(s => JSON.stringify(G.BROS_STYLES[s.style])).join(', ') + ']\n';
+st += '    export const styles: number[] = [' + C.stages.map(s => C.styles.indexOf(s.style)).join(', ') + ']\n';
+st += '    export function tilemap(i: number): tiles.TileMapData {\n        switch (i) {\n';
+C.stages.forEach((s, i) => {
+    const rows = G.BROS_LAYOUTS[s.layout].rows, bytes = [20, 0, 15, 0], walls = [];
+    rows.forEach(r => { let pw = 0; const wr = []; [...r].forEach(c => { const v = c === '#' ? 1 : c === '=' ? 2 : c === 'P' ? (pw++ % 2 ? 4 : 3) : 0; bytes.push(v); wr.push(v ? '2' : '.'); }); walls.push('            ' + wr.join(' ')); });
+    st += `            case ${i}: return tiles.createTilemap(hex\`${Buffer.from(bytes).toString('hex')}\`, img\`\n${walls.join('\n')}\n            \`, brosGfx.tilesets[${C.styles.indexOf(s.style)}], TileScale.Eight)\n`;
+});
+st += '        }\n        return null\n    }\n}\n';
+fs.writeFileSync(path.join(__dirname, '../stages.ts'), st);
+let snd = '// AUTOMATISCH ERZEUGT von tools/build-assets.js – Sounds in tools/config.js ändern.\nnamespace brosSounds {\n';
+for (const k in C.sfx) snd += S.sfxToTS(k, S.sfx(C.sfx[k][0], C.sfx[k][1]));
+for (const k in C.melodies) snd += S.melodyToTS(k, S.melody(C.melodies[k][0], C.melodies[k][1]));
+fs.writeFileSync(path.join(__dirname, '../sounds.ts'), snd + '}\n');
+console.log('assets.ts', Math.round(ts.length / 1024) + ' KB, stages.ts, sounds.ts');

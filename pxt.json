@@ -1,0 +1,22 @@
+{
+    "name": "pixelbros",
+    "version": "0.1.0",
+    "description": "Pixel-Bros: Jump & Run für 1 bis 4 Spieler gleichzeitig auf festen Bühnen, wie Mario Bros",
+    "dependencies": {
+        "device": "*"
+    },
+    "files": [
+        "README.md",
+        "assets.ts",
+        "stages.ts",
+        "sounds.ts",
+        "engine.ts"
+    ],
+    "testFiles": [
+        "test.ts"
+    ],
+    "supportedTargets": [
+        "arcade"
+    ],
+    "preferredEditor": "tsprj"
+}
